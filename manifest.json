@@ -1,10 +1,10 @@
 ﻿{
-  "Name": "todo",
+  "Name": "Valley Chests",
   "Author": "Dannode36",
   "Version": "0.1.0",
   "Description": "",
-  "UniqueID": "Dannode36.todo",
-  "EntryDll": "todo.dll",
+  "UniqueID": "Dannode36.ValleyChests",
+  "EntryDll": "ValleyChests.dll",
   "MinimumApiVersion": "3.0.0",
   "UpdateKeys": []
 }
