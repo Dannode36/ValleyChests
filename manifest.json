@@ -1,0 +1,10 @@
+﻿{
+  "Name": "todo",
+  "Author": "Dannode36",
+  "Version": "0.1.0",
+  "Description": "",
+  "UniqueID": "Dannode36.todo",
+  "EntryDll": "todo.dll",
+  "MinimumApiVersion": "3.0.0",
+  "UpdateKeys": []
+}

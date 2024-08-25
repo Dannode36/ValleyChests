@@ -1,0 +1,2 @@
+# smapi-mod-template
+ 
