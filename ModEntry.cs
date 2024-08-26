@@ -25,24 +25,24 @@ namespace ValleyChests
             helper.Events.Display.MenuChanged += OnMenuChanged;
             helper.Events.Display.WindowResized += OnWindowResized;
 
-            stealAllButton = new(helper.ModContent.Load<Texture2D>("assets/stealButton.png"), new(0, 0, 16, 16))
-            {
-                BoxDraw = false,
-                Tooltip = "Take all"
-            };
-            root.AddChild(stealAllButton);
-
             dumpAllButton = new(helper.ModContent.Load<Texture2D>("assets/dumpButton.png"), new(0, 0, 16, 16))
             {
                 BoxDraw = false,
-                Tooltip = "Add all from inventory"
+                Tooltip = "Add All From Inventory"
             };
             root.AddChild(dumpAllButton);
+
+            stealAllButton = new(helper.ModContent.Load<Texture2D>("assets/stealButton.png"), new(0, 0, 16, 16))
+            {
+                BoxDraw = false,
+                Tooltip = "Take All From Chest"
+            };
+            root.AddChild(stealAllButton);
         }
 
         private void OnWindowResized(object? sender, WindowResizedEventArgs e)
         {
-            stealAllButton.LocalPosition = new(100, 100);
+            //stealAllButton.LocalPosition = new(100, 100);
         }
 
         private void OnUpdateTick(object? sender, UpdateTickingEventArgs e)
@@ -62,23 +62,33 @@ namespace ValleyChests
             {
                 stealAllButton.Callback = (e) =>
                 {
-                    var inv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
-                    for (int i = 0; i < inv.Count; i++)
+                    var grabableInv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
+                    for (int i = 0; i < grabableInv.Count; i++)
                     {
-                        inv[i] = Game1.player.addItemToInventory(inv[i]);
+                        grabableInv[i] = Game1.player.addItemToInventory(grabableInv[i]);
                     }
                 };
-                stealAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 0);
+                stealAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 64 + 16);
 
                 dumpAllButton.Callback = (e) =>
                 {
-                    var inv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
-                    for (int i = 0; i < inv.Count; i++)
+                    var playerInv = itemGrabmenu.inventory.actualInventory;
+
+                    for (int i = 0; i < playerInv.Count; i++)
                     {
-                        inv[i] = Game1.player.addItemToInventory(inv[i]);
+                        playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
+
+                        //Weird af fix (assumes worst case that item will not stack cleanly)
+                        //Probably due to Stardew skipping slots if actualInventory is smaller than
+                        //the Grab Menu's actual capacity
+                        if (playerInv[i] != null && itemGrabmenu.ItemsToGrabMenu.actualInventory.Count < itemGrabmenu.inventory.capacity)
+                        {
+                            itemGrabmenu.ItemsToGrabMenu.actualInventory.Add(null);
+                            playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
+                        }
                     }
                 };
-                dumpAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 64 + 16);
+                dumpAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 0);
             }
         }
 
@@ -86,11 +96,26 @@ namespace ValleyChests
         {
             if (!Context.IsWorldReady)
                 return;
+
             if(Game1.activeClickableMenu is ItemGrabMenu itemGrabmenu 
                 && itemGrabmenu.fillStacksButton != null)
             {
                 root.Draw(e.SpriteBatch);
+
+                //Redraw mouse and tooltips over SMUI elements
                 itemGrabmenu.drawMouse(e.SpriteBatch);
+                if (itemGrabmenu.hoverText != null 
+                    && (itemGrabmenu.hoveredItem == null || itemGrabmenu.hoveredItem == null || itemGrabmenu.ItemsToGrabMenu == null))
+                {
+                    if (itemGrabmenu.hoverAmount > 0)
+                    {
+                        IClickableMenu.drawToolTip(e.SpriteBatch, itemGrabmenu.hoverText, "", null, heldItem: true, -1, 0, null, -1, null, itemGrabmenu.hoverAmount);
+                    }
+                    else
+                    {
+                        IClickableMenu.drawHoverText(e.SpriteBatch, itemGrabmenu.hoverText, Game1.smallFont);
+                    }
+                }
             }
         }
     }
