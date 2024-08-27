@@ -18,6 +18,8 @@ namespace ValleyChests
         Button stealAllButton = new();
         Button dumpAllButton = new();
 
+        ItemGrabMenu? activeItemGrabMenu = null;
+
         public override void Entry(IModHelper helper)
         {
             helper.Events.GameLoop.UpdateTicking += OnUpdateTick;
@@ -28,21 +30,21 @@ namespace ValleyChests
             dumpAllButton = new(helper.ModContent.Load<Texture2D>("assets/dumpButton.png"), new(0, 0, 16, 16))
             {
                 BoxDraw = false,
-                Tooltip = "Add All From Inventory"
+                Tooltip = "Dump All"
             };
             root.AddChild(dumpAllButton);
 
             stealAllButton = new(helper.ModContent.Load<Texture2D>("assets/stealButton.png"), new(0, 0, 16, 16))
             {
                 BoxDraw = false,
-                Tooltip = "Take All From Chest"
+                Tooltip = "Take All"
             };
             root.AddChild(stealAllButton);
         }
 
         private void OnWindowResized(object? sender, WindowResizedEventArgs e)
         {
-            //stealAllButton.LocalPosition = new(100, 100);
+            RepositionButtons();
         }
 
         private void OnUpdateTick(object? sender, UpdateTickingEventArgs e)
@@ -54,12 +56,16 @@ namespace ValleyChests
 
         private void OnMenuChanged(object? sender, MenuChangedEventArgs e)
         {
+            activeItemGrabMenu = null;
+
             if (!Context.IsWorldReady)
                 return;
+
             if (e.NewMenu != null 
                 && e.NewMenu is ItemGrabMenu itemGrabmenu 
                 && itemGrabmenu.fillStacksButton != null)
             {
+                activeItemGrabMenu = itemGrabmenu;
                 stealAllButton.Callback = (e) =>
                 {
                     var grabableInv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
@@ -67,8 +73,8 @@ namespace ValleyChests
                     {
                         grabableInv[i] = Game1.player.addItemToInventory(grabableInv[i]);
                     }
+                    Monitor.Log($"{Game1.player.Name} used TakeAll on {itemGrabmenu.context.GetType().Name}. {itemGrabmenu.ItemsToGrabMenu.actualInventory.Count} -> {Game1.player.Items}");
                 };
-                stealAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 64 + 16);
 
                 dumpAllButton.Callback = (e) =>
                 {
@@ -78,17 +84,20 @@ namespace ValleyChests
                     {
                         playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
 
-                        //Weird af fix (assumes worst case that item will not stack cleanly)
+                        //Weird af fix
                         //Probably due to Stardew skipping slots if actualInventory is smaller than
-                        //the Grab Menu's actual capacity
-                        if (playerInv[i] != null && itemGrabmenu.ItemsToGrabMenu.actualInventory.Count < itemGrabmenu.inventory.capacity)
+                        //the Grab Menu's actual capacity when using tryToAddItem
+                        if (playerInv[i] != null && playerInv[i].Stack != 0 && itemGrabmenu.ItemsToGrabMenu.actualInventory.Count < itemGrabmenu.ItemsToGrabMenu.capacity)
                         {
                             itemGrabmenu.ItemsToGrabMenu.actualInventory.Add(null);
                             playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
                         }
                     }
+
+                    Monitor.Log($"{Game1.player.Name} used DumpAll on {itemGrabmenu.context.GetType().Name}. {Game1.player.Items} -> {itemGrabmenu.ItemsToGrabMenu.actualInventory.Count}");
                 };
-                dumpAllButton.LocalPosition = itemGrabmenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 0);
+
+                RepositionButtons();
             }
         }
 
@@ -97,25 +106,33 @@ namespace ValleyChests
             if (!Context.IsWorldReady)
                 return;
 
-            if(Game1.activeClickableMenu is ItemGrabMenu itemGrabmenu 
-                && itemGrabmenu.fillStacksButton != null)
+            if(activeItemGrabMenu != null && activeItemGrabMenu.fillStacksButton != null)
             {
                 root.Draw(e.SpriteBatch);
 
                 //Redraw mouse and tooltips over SMUI elements
-                itemGrabmenu.drawMouse(e.SpriteBatch);
-                if (itemGrabmenu.hoverText != null 
-                    && (itemGrabmenu.hoveredItem == null || itemGrabmenu.hoveredItem == null || itemGrabmenu.ItemsToGrabMenu == null))
+                activeItemGrabMenu.drawMouse(e.SpriteBatch);
+                if (activeItemGrabMenu.hoverText != null 
+                    && (activeItemGrabMenu.hoveredItem == null || activeItemGrabMenu.hoveredItem == null || activeItemGrabMenu.ItemsToGrabMenu == null))
                 {
-                    if (itemGrabmenu.hoverAmount > 0)
+                    if (activeItemGrabMenu.hoverAmount > 0)
                     {
-                        IClickableMenu.drawToolTip(e.SpriteBatch, itemGrabmenu.hoverText, "", null, heldItem: true, -1, 0, null, -1, null, itemGrabmenu.hoverAmount);
+                        IClickableMenu.drawToolTip(e.SpriteBatch, activeItemGrabMenu.hoverText, "", null, heldItem: true, -1, 0, null, -1, null, activeItemGrabMenu.hoverAmount);
                     }
                     else
                     {
-                        IClickableMenu.drawHoverText(e.SpriteBatch, itemGrabmenu.hoverText, Game1.smallFont);
+                        IClickableMenu.drawHoverText(e.SpriteBatch, activeItemGrabMenu.hoverText, Game1.smallFont);
                     }
                 }
+            }
+        }
+
+        private void RepositionButtons()
+        {
+            if(activeItemGrabMenu != null)
+            {
+                stealAllButton.LocalPosition = activeItemGrabMenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 64 + 16);
+                dumpAllButton.LocalPosition = activeItemGrabMenu.fillStacksButton.getVector2() + new Vector2(64 + 16, 0);
             }
         }
     }
