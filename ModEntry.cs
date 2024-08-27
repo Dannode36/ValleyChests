@@ -30,14 +30,18 @@ namespace ValleyChests
             dumpAllButton = new(helper.ModContent.Load<Texture2D>("assets/dumpButton.png"), new(0, 0, 16, 16))
             {
                 BoxDraw = false,
-                Tooltip = "Dump All"
+                Tooltip = "Dump All",
+                HoveredSound = string.Empty,
+                ClickedSound = "Ship"
             };
             root.AddChild(dumpAllButton);
 
             stealAllButton = new(helper.ModContent.Load<Texture2D>("assets/stealButton.png"), new(0, 0, 16, 16))
             {
                 BoxDraw = false,
-                Tooltip = "Take All"
+                Tooltip = "Take All",
+                HoveredSound = string.Empty,
+                ClickedSound = "Ship"
             };
             root.AddChild(stealAllButton);
         }
@@ -68,21 +72,23 @@ namespace ValleyChests
                 activeItemGrabMenu = itemGrabmenu;
                 stealAllButton.Callback = (e) =>
                 {
+                    int log_grabMenuItemCount = itemGrabmenu.ItemsToGrabMenu.actualInventory.Count;
                     var grabableInv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
                     for (int i = 0; i < grabableInv.Count; i++)
                     {
                         grabableInv[i] = Game1.player.addItemToInventory(grabableInv[i]);
                     }
-                    Monitor.Log($"{Game1.player.Name} used TakeAll on {itemGrabmenu.context.GetType().Name}. {itemGrabmenu.ItemsToGrabMenu.actualInventory.Count} -> {Game1.player.Items}");
+                    Monitor.Log($"{Game1.player.Name} used TakeAll on {itemGrabmenu.context.GetType().Name}. {log_grabMenuItemCount} -> {Game1.player.Items.CountItemStacks()}");
                 };
 
                 dumpAllButton.Callback = (e) =>
                 {
+                    int log_playerItemCount = Game1.player.Items.CountItemStacks();
                     var playerInv = itemGrabmenu.inventory.actualInventory;
 
                     for (int i = 0; i < playerInv.Count; i++)
                     {
-                        playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
+                        playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i], string.Empty);
 
                         //Weird af fix
                         //Probably due to Stardew skipping slots if actualInventory is smaller than
@@ -90,11 +96,11 @@ namespace ValleyChests
                         if (playerInv[i] != null && playerInv[i].Stack != 0 && itemGrabmenu.ItemsToGrabMenu.actualInventory.Count < itemGrabmenu.ItemsToGrabMenu.capacity)
                         {
                             itemGrabmenu.ItemsToGrabMenu.actualInventory.Add(null);
-                            playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i]);
+                            playerInv[i] = itemGrabmenu.ItemsToGrabMenu.tryToAddItem(playerInv[i], string.Empty);
                         }
                     }
 
-                    Monitor.Log($"{Game1.player.Name} used DumpAll on {itemGrabmenu.context.GetType().Name}. {Game1.player.Items} -> {itemGrabmenu.ItemsToGrabMenu.actualInventory.Count}");
+                    Monitor.Log($"{Game1.player.Name} used DumpAll on {itemGrabmenu.context.GetType().Name}. {Game1.player.Items.CountItemStacks()} -> {itemGrabmenu.ItemsToGrabMenu.actualInventory.Count}");
                 };
 
                 RepositionButtons();
