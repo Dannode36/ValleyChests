@@ -6,5 +6,10 @@
   "UniqueID": "Dannode36.ValleyChests",
   "EntryDll": "ValleyChests.dll",
   "MinimumApiVersion": "3.0.0",
-  "UpdateKeys": []
+  "UpdateKeys": [],
+  "Dependencies": [
+    {
+      "UniqueID": "Dannode36.SMUI"
+    }
+  ]
 }

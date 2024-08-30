@@ -70,7 +70,7 @@ namespace ValleyChests
                 && itemGrabmenu.fillStacksButton != null)
             {
                 activeItemGrabMenu = itemGrabmenu;
-                stealAllButton.Callback = (e) =>
+                stealAllButton.OnClick = (e) =>
                 {
                     int log_grabMenuItemCount = itemGrabmenu.ItemsToGrabMenu.actualInventory.Count;
                     var grabableInv = itemGrabmenu.ItemsToGrabMenu.actualInventory;
@@ -81,7 +81,7 @@ namespace ValleyChests
                     Monitor.Log($"{Game1.player.Name} used TakeAll on {itemGrabmenu.context.GetType().Name}. {log_grabMenuItemCount} -> {Game1.player.Items.CountItemStacks()}");
                 };
 
-                dumpAllButton.Callback = (e) =>
+                dumpAllButton.OnClick = (e) =>
                 {
                     int log_playerItemCount = Game1.player.Items.CountItemStacks();
                     var playerInv = itemGrabmenu.inventory.actualInventory;
